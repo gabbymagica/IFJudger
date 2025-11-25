@@ -7,8 +7,8 @@ type ExecutionRequest struct {
 }
 
 type ExecutionResponse struct {
-	ID     string
-	Status string // "queued", "processing", "success", "error"
+	ID     string `json:"id"`
+	Status string `json:"status"` // "queued", "processing", "success", "error"
 	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
 	Error  string `json:"error"`
