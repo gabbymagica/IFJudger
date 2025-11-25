@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	dto "IFJudger/internal/models"
+	dto "IFJudger/internal/api/dto"
 	"IFJudger/internal/services"
 	"encoding/json"
 	"net/http"
@@ -27,19 +27,36 @@ func (c *WorkerController) HandleExecution(w http.ResponseWriter, r *http.Reques
 
 	defer r.Body.Close()
 
-	stdout, stderr, execErr := c.WorkerService.ExecuteWorker(requestDTO.Code, requestDTO.Input)
+	token := c.WorkerService.EnqueueJob(requestDTO.Code, requestDTO.Input, requestDTO.WebhookURL)
 
-	responseDTO := dto.ExecutionResponse{
-		Stdout: stdout,
-		Stderr: stderr,
-		//Error:  execErr.Error(),
-	}
-
-	if execErr != nil {
-		responseDTO.Error = execErr.Error()
+	executionEnqueuedResponse := dto.ExecutionEnqueuedResponse{
+		Token:   token,
+		Message: "Execution enqueued",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(responseDTO)
+	json.NewEncoder(w).Encode(executionEnqueuedResponse)
+}
+
+func (c *WorkerController) HandleStatus(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+
+	jobResult, ok := c.WorkerService.GetResult(token)
+	if !ok {
+		http.Error(w, "Invalid token", http.StatusBadRequest)
+		return
+	}
+
+	statusResponse := dto.ExecutionResponse{
+		ID:     jobResult.ID,
+		Status: jobResult.Status,
+		Stdout: jobResult.Stdout,
+		Stderr: jobResult.Stderr,
+		Error:  jobResult.Error,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(statusResponse)
 }

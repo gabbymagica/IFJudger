@@ -28,6 +28,7 @@ func StartRoutes() *http.ServeMux {
 
 	mux.HandleFunc("GET /test", testController.GetTest)
 	mux.HandleFunc("POST /worker", workerController.HandleExecution)
+	mux.HandleFunc("GET /worker", workerController.HandleStatus)
 
 	return mux
 }
